@@ -23,7 +23,7 @@ public final class BLEManager: NSObject {
         log.verbose("Deinit called.")
     }
     
-    func log(string: String) {
+    public func log(string: String) {
         print(string)
     }
 }
