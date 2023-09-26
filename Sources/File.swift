@@ -10,11 +10,11 @@ import Foundation
 public final class BLEManager: NSObject {
     
     // MARK: - Properties
-    public struct Static {
+    struct Static {
         static var shared: BLEManager?
     }
     
-    class var shared: BLEManager {
+    public var shared: BLEManager {
         if Static.shared == nil { Static.shared = BLEManager() }
         return Static.shared!
     }
