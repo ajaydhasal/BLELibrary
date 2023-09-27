@@ -11,7 +11,7 @@ public final class BLEManager: NSObject {
     
     // MARK: - Properties
     public struct Static {
-        static var shared: BLEManager?
+        public static var shared: BLEManager?
     }
     
     public var shared: BLEManager {
