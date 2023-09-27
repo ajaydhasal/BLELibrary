@@ -8,17 +8,8 @@
 import Foundation
 
 public final class BLEManager: NSObject {
-    
-    // MARK: - Properties
-    public struct Static {
-        public static var shared: BLEManager?
-    }
-    
-    public var shared: BLEManager {
-        if Static.shared == nil { Static.shared = BLEManager() }
-        return Static.shared!
-    }
-    
+    public static var shared = BLEManager()
+
     deinit {
         print("Deinit called.")
     }
