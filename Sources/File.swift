@@ -10,7 +10,7 @@ import Foundation
 public final class BLEManager: NSObject {
     
     // MARK: - Properties
-    struct Static {
+    public struct Static {
         static var shared: BLEManager?
     }
     
