@@ -61,7 +61,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
     }
     
     // MARK: - Central Manger Methods
-    func startScanning() {
+    public func startScanning() {
         print("BLEManager will start scanning")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { //To wait until the centralManagerDidUpdateState(_ central: CBCentralManager) callback has been called. And then, verify that the state is PoweredOn before scanning for peripherals
             
@@ -72,7 +72,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
         }
     }
     
-    func stopScanning() {
+    public func stopScanning() {
         if centralManager.isScanning {
             print("BLEManager stopped scanning")
             centralManager.stopScan()
