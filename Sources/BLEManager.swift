@@ -167,6 +167,8 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
         
         guard advertisementData[CBAdvertisementDataLocalNameKey] != nil || peripheral.name != nil else { return } // Prevents the devices with no name.
         
+        print("peripheral name =\(advertisementData[CBAdvertisementDataLocalNameKey] ?? peripheral.name ?? "NO Name")")
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             if let block = self.didDiscoverDevice {
                 let device = BLEDevice(peripheral: peripheral, advertisementData: advertisementData, rssiNumber: RSSI)
