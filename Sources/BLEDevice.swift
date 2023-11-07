@@ -22,7 +22,7 @@ public class BLEDevice {
 
     }
 
-    func getLocalName() -> String? {
+    public func getLocalName() -> String? {
         return advertisementData?[CBAdvertisementDataLocalNameKey] as? String ?? self.peripheral.name ?? "NO NAME"
     }
 }
