@@ -189,7 +189,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
     
     private func write(frame: [UInt8]) {
         guard let peripheral = connectedPeripheral else { return }
-        guard let writeCharacteristic != nil else { return}
+        guard writeCharacteristic != nil else { return}
         let chunked = frame.chunked(into: 20)
         for subFrame in chunked {
             let data = Data(bytes: UnsafePointer<UInt8>(subFrame), count: subFrame.count)
