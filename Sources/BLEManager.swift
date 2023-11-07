@@ -337,6 +337,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
         self.stopPolling()
         if let block = didReceiveResponse {
             block(response)
+            print("response =\(response)")
         }
     }
 }
