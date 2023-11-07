@@ -290,9 +290,11 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
                 
                 if characteristic.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsRxUUID)){
                     writeCharacteristic = characteristic
+                    print("writeCharacteristic characteristics discovered:")
                     
                 } else if characteristic.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsTxUUID)){
                     readCharacteristic = characteristic
+                    print("readCharacteristic characteristics discovered:")
                 }
             }
         }
@@ -301,6 +303,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
             if readCharacteristic != nil && writeCharacteristic != nil {
                 peripheral.setNotifyValue(true, for: readCharacteristic!)
                 peripheral.setNotifyValue(true, for: writeCharacteristic!)
+                print("setNotifyValue read and write")
             }
         }
     }
