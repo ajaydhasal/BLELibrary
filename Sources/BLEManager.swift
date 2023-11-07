@@ -102,14 +102,26 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
     var scannedDevices = [BLEDevice]()
     
     // MARK: - Initializer
-    private override init() {
-        super.init()
-        centralManager = CBCentralManager(delegate: self, queue: .main)
-        if let exampleValue = Bundle.main.object(forInfoDictionaryKey: "NSBluetoothAlwaysUsageDescription") {
-            print("NSBluetoothAlwaysUsageDescription =\(exampleValue)")
+    fileprivate func initilizeCentralManager() throws {
+        guard let nsBluetoothAlwaysUsageDescription = Bundle.main.object(forInfoDictionaryKey: "NSBluetoothAlwaysUsageDescription") else {
+            throw BLEErrors.missingNSBluetoothAlwaysUsageDescription
         }
         
-        print("BLEManager initialized")
+        guard let snBluetoothPeripheralUsageDescription = Bundle.main.object(forInfoDictionaryKey: "NSBluetoothPeripheralUsageDescription") else {
+            throw BLEErrors.missingNSBluetoothPeripheralUsageDescription
+        }
+        centralManager = CBCentralManager(delegate: self, queue: .main)
+        
+    }
+    
+    private override init() {
+        super.init()
+        do {
+            try initilizeCentralManager()
+            print("BLEManager initialized")
+        } catch {
+            print(error.localizedDescription)
+        }
     }
     
     public func dispose() {
