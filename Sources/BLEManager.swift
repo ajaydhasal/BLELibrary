@@ -70,6 +70,10 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
     private override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: .main)
+        if let exampleValue = Bundle.main.object(forInfoDictionaryKey: "NSBluetoothAlwaysUsageDescription") {
+            print("NSBluetoothAlwaysUsageDescription =\(exampleValue)")
+        }
+        
         print("BLEManager initialized")
     }
     
