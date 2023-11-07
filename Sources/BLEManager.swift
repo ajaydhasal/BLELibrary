@@ -116,12 +116,13 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
     
     private override init() {
         super.init()
-        do {
-            try initilizeCentralManager()
-            print("BLEManager initialized")
-        } catch {
-            print(error.localizedDescription)
-        }
+        centralManager = CBCentralManager(delegate: self, queue: .main)
+//        do {
+//            try initilizeCentralManager()
+//            print("BLEManager initialized")
+//        } catch {
+//            print(error.localizedDescription)
+//        }
     }
     
     public func dispose() {
