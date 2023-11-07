@@ -22,7 +22,7 @@ struct BLEManagerConstants {
 struct TimerConstant {
     static let bleScanningWaitTimer = 5
     static let blePollingTimer = 1.0
-    static let pairingWaitTimer = 15
+    static let pairingWaitTimer = 30
 }
 
 
@@ -206,6 +206,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
         
         
         if let block = didConnectPeripheral {
+            self.startPolling()
             block(peripheral)
         }
     }
@@ -329,7 +330,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
         // Check here, if the request is continuous, use the continuousResponseBuffer instead of passing the response to controllers.
 
         isWaitingForResponse = false
-
+        self.stopPolling()
         if let block = didReceiveResponse {
             block(response)
         }
