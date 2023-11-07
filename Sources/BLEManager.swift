@@ -284,14 +284,14 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
             return
         }
         
-        if service.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsRxUUID)) ||  service.uuid.isEqual(CBUUID(string: BLEManagerConstants.legacyRxUUID)){
+        if service.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsRxUUID)) {
             
             for characteristic: CBCharacteristic in service.characteristics! {
                 
-                if characteristic.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsRxUUID)) ||  characteristic.uuid.isEqual(CBUUID(string: BLEManagerConstants.legacyRxUUID)){
+                if characteristic.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsRxUUID)){
                     writeCharacteristic = characteristic
                     
-                } else if characteristic.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsRxUUID)) ||  characteristic.uuid.isEqual(CBUUID(string: BLEManagerConstants.legacyRxUUID)){
+                } else if characteristic.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsTxUUID)){
                     readCharacteristic = characteristic
                 }
             }
@@ -300,6 +300,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
         for characteristic in (service.characteristics)! where !characteristic.isNotifying {
             if readCharacteristic != nil && writeCharacteristic != nil {
                 peripheral.setNotifyValue(true, for: readCharacteristic!)
+                peripheral.setNotifyValue(true, for: writeCharacteristic!)
             }
         }
     }
