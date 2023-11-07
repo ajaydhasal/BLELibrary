@@ -201,11 +201,10 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
 
         guard advertisementData[CBAdvertisementDataLocalNameKey] != nil || peripheral.name != nil else { return } // Prevents the devices with no name.
         
-        
+        let device = BLEDevice(peripheral: peripheral, advertisementData: advertisementData, rssiNumber: RSSI)
+        self.scannedDevices.append(device)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             if let block = self.didDiscoverDevice {
-                let device = BLEDevice(peripheral: peripheral, advertisementData: advertisementData, rssiNumber: RSSI)
-                self.scannedDevices.append(device)
                 block(device)
             }
         }
