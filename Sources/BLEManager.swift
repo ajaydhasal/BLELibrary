@@ -8,6 +8,41 @@
 import Foundation
 import CoreBluetooth
 
+enum BLEErrors: Swift.Error {
+
+    case missingNSBluetoothAlwaysUsageDescription
+    case missingNSBluetoothPeripheralUsageDescription
+    case cbManagerStateUnknown
+    case cbManagerStateResetting
+    case cbUnsupported
+    case cbUnauthorized
+    case cbPoweredOff
+    case cbpoweredOn
+
+    var localizedDescription: String {
+        switch self {
+            
+        case .missingNSBluetoothAlwaysUsageDescription:
+            return "Missing NSBluetoothAlwaysUsageDescription Key in Plist"
+        case .missingNSBluetoothPeripheralUsageDescription:
+            return "Missing NSBluetoothPeripheralUsageDescription Key in Plist"
+        case .cbManagerStateUnknown:
+            return "Unknown"
+        case .cbManagerStateResetting:
+            return "Resetting"
+        case .cbUnsupported:
+            return "UnSupported"
+        case .cbUnauthorized:
+            return "UnAuthorized"
+        case .cbPoweredOff:
+            return "Device Bluetooth Powered Off"
+        case .cbpoweredOn:
+            return "Device Bluetooth Powered On"
+        }
+    }
+}
+
+
 struct BLEManagerConstants {
     static let legacyServiceUUID = "bccb0001-ca66-11e5-88a4-0002a5d5c51b"
     static let legacyTxUUID = "bccb0003-ca66-11e5-88a4-0002a5d5c51b"
