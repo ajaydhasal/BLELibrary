@@ -21,10 +21,15 @@ struct BLEManagerConstants {
 
 struct TimerConstant {
     static let bleScanningWaitTimer = 5
+    static let blePollingTimer = 1.0
+    static let pairingWaitTimer = 15
 }
 
-public final class BLEManager: NSObject, CBCentralManagerDelegate {
+
+public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
     public static var shared = BLEManager()
+    
+    var readValveStatus:[UInt8] = [170, 85, 0, 43, 1, 2, 211];
     
     deinit {
         print("Deinit called.")
@@ -42,6 +47,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
     private var writeCharacteristic: CBCharacteristic?
     
     public var isScanning: Bool { return centralManager.isScanning }
+    var isWaitingForResponse = true
     
     public var didChangeBLEState: ((CBManagerState) -> Void)?
     public var didDiscoverDevice: ((BLEDevice) -> Void)?
@@ -50,9 +56,13 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
     public var didConnectPeripheral: ((CBPeripheral) -> Void)?
     public var didFailToConnectPeripheral: ((CBPeripheral, Error?) -> Void)?
     public var didLossConnection: ((_ peripheral: CBPeripheral?) -> Void)?
+    public var didReceiveResponse:((_ response: [UInt8]) -> Void)?
+    public var didPairingFailed:(() -> Void)?
+    
     public var isConnected: Bool { return connectedPeripheral != nil }
     
     var scanningTimer: Timer?
+    var pollingTimer: Timer?
     
     var scannedDevices = [BLEDevice]()
     
@@ -90,6 +100,28 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
         scanningTimer = nil
     }
     
+    public func startPolling() {
+        stopPolling()
+        let timeInterval = TimerConstant.blePollingTimer
+        var pairingWaitTimer = TimerConstant.pairingWaitTimer
+        
+        pollingTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(timeInterval), repeats: true) { [weak self] _ in
+            guard let self = self else {return}
+            if pairingWaitTimer < 0 {
+                self.isWaitingForResponse = true
+                self.didPairingFailed?()
+            } else {
+                pairingWaitTimer -= 1
+                self.write(frame: readValveStatus)
+            }
+        }
+    }
+    
+    public func stopPolling() {
+        self.pollingTimer?.invalidate()
+        self.pollingTimer = nil
+    }
+    
     // MARK: - Central Manger Methods
     public func startScanning() {
         startWaitTimer()
@@ -98,7 +130,8 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { //To wait until the centralManagerDidUpdateState(_ central: CBCentralManager) callback has been called. And then, verify that the state is PoweredOn before scanning for peripherals
             
             guard case .poweredOn = self.bleState else { return }
-            self.centralManager.scanForPeripherals(withServices: [CBUUID(string: BLEManagerConstants.legacyServiceUUID), CBUUID(string: BLEManagerConstants.gcsServiceUUID)], options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+            self.centralManager.scanForPeripherals(withServices: [CBUUID(string: BLEManagerConstants.gcsServiceUUID)], options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+            //CBUUID(string: BLEManagerConstants.legacyServiceUUID),
             print("BLEManager started scanning")
             
         }
@@ -109,6 +142,10 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
             print("BLEManager stopped scanning")
             centralManager.stopScan()
         }
+    }
+    
+    public func connect(device: BLEDevice) {
+        self.connect(peripheral: device.peripheral)
     }
     
     func connect(peripheral: CBPeripheral, options: [String: Any]? = nil) {
@@ -150,14 +187,22 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
         centralManager?.cancelPeripheralConnection(connectedPeripheral!)
     }
     
+    private func write(frame: [UInt8]) {
+        guard let peripheral = connectedPeripheral else { return }
+        
+        let chunked = frame.chunked(into: 20)
+        for subFrame in chunked {
+            let data = Data(bytes: UnsafePointer<UInt8>(subFrame), count: subFrame.count)
+            peripheral.writeValue(data, for: writeCharacteristic!, type: .withResponse)
+        }
+    }
+    
     // MARK: - CBCentralManagerDelegate
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         
-        
         connectedPeripheral = peripheral
-        //        connectedPeripheral?.delegate = self
-        //
-        //        connectedPeripheral?.discoverServices([CBUUID(string: BLEManagerConstants.serviceUUID)])
+        connectedPeripheral?.delegate = self
+        connectedPeripheral?.discoverServices([CBUUID(string: BLEManagerConstants.gcsServiceUUID)])
         
         
         if let block = didConnectPeripheral {
@@ -212,14 +257,14 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
     
     // MARK: - CBPeripheralDelegate
     
-    func peripheralDidUpdateName(_ peripheral: CBPeripheral) {
+    public func peripheralDidUpdateName(_ peripheral: CBPeripheral) {
         if let block = peripheralDidUpdateName {
             block(BLEDevice(peripheral: peripheral))
         }
         print("Updated name: - \(peripheral.name ?? "no_name")")
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         
         if let error = error {
             print("Error discovering services: - \(error.localizedDescription)")
@@ -231,7 +276,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
         }
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         
         if let error = error {
             print("Error discovering characteristics: - \(error.localizedDescription)")
@@ -258,14 +303,14 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
         }
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         //Request
         if let error = error {
             print("Error writing value: \(error.localizedDescription)")
         }
     }
     
-    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         // Response
         // This method should not do any insertion/deletion in the queue or queue buffer.
         guard let data = characteristic.value else {
@@ -273,14 +318,21 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
             return
         }
         
-        //        //guard let first = queue.first else { return }
-        //
-        //        let count = data.count / MemoryLayout<UInt8>.size
-        //        var array = [UInt8](repeating: 0, count: count)
-        //
-        //        (data as NSData).getBytes(&array, length: count)
-        //
-        //        handle(response: array, error: error, for: first)
+        let count = data.count / MemoryLayout<UInt8>.size
+        var array = [UInt8](repeating: 0, count: count)
+        (data as NSData).getBytes(&array, length: count)
+        handle(response: array, error: error)
+    }
+    
+    func handle(response: [UInt8], error: Error?) {
+
+        // Check here, if the request is continuous, use the continuousResponseBuffer instead of passing the response to controllers.
+
+        isWaitingForResponse = false
+
+        if let block = didReceiveResponse {
+            block(response)
+        }
     }
 }
 
