@@ -19,6 +19,10 @@ struct BLEManagerConstants {
     
 }
 
+struct TimerConstant {
+    static let bleScanningWaitTimer = 5
+}
+
 public final class BLEManager: NSObject, CBCentralManagerDelegate {
     public static var shared = BLEManager()
     
@@ -41,11 +45,16 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
     
     public var didChangeBLEState: ((CBManagerState) -> Void)?
     public var didDiscoverDevice: ((BLEDevice) -> Void)?
+    public var didScanEnd: (([BLEDevice]) -> Void)?
     public var peripheralDidUpdateName: ((BLEDevice) -> Void)?
     public var didConnectPeripheral: ((CBPeripheral) -> Void)?
     public var didFailToConnectPeripheral: ((CBPeripheral, Error?) -> Void)?
     public var didLossConnection: ((_ peripheral: CBPeripheral?) -> Void)?
     public var isConnected: Bool { return connectedPeripheral != nil }
+    
+    var scanningTimer: Timer?
+    
+    var scannedDevices = [BLEDevice]()
     
     // MARK: - Initializer
     private override init() {
@@ -60,8 +69,31 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
         print("BLEManager disposed")
     }
     
+    
+    func startWaitTimer() {
+        invalidateWaitTimer()
+        let timeInterval: Int = TimerConstant.bleScanningWaitTimer
+        
+        scanningTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(timeInterval), repeats: false) { [weak self] _ in
+            guard let self = self else {return}
+            self.invalidateWaitTimer()
+            self.stopScanning()
+            
+            if let block = self.didScanEnd {
+                block(self.scannedDevices)
+            }
+        }
+    }
+    
+    func invalidateWaitTimer() {
+        scanningTimer?.invalidate()
+        scanningTimer = nil
+    }
+    
     // MARK: - Central Manger Methods
     public func startScanning() {
+        startWaitTimer()
+        self.scannedDevices.removeAll()
         print("BLEManager will start scanning")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { //To wait until the centralManagerDidUpdateState(_ central: CBCentralManager) callback has been called. And then, verify that the state is PoweredOn before scanning for peripherals
             
@@ -173,6 +205,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             if let block = self.didDiscoverDevice {
                 let device = BLEDevice(peripheral: peripheral, advertisementData: advertisementData, rssiNumber: RSSI)
+                self.scannedDevices.append(device)
                 block(device)
             }
         }
