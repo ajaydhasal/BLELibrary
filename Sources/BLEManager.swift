@@ -284,7 +284,7 @@ public final class BLEManager: NSObject, CBCentralManagerDelegate, CBPeripheralD
             return
         }
         
-        if service.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsRxUUID)) {
+        if service.uuid.isEqual(CBUUID(string: BLEManagerConstants.gcsServiceUUID)) {
             
             for characteristic: CBCharacteristic in service.characteristics! {
                 
